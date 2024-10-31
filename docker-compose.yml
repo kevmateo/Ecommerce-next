@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  todosDB:
+    image: postgres:15.3
+    container_name: teslo-shop
+    restart: always
+    ports:
+      - "5433:5432" # Usa comillas para evitar problemas en algunos entornos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: teslo # Cambié el nombre de la base de datos a "todos"
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
