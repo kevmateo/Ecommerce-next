@@ -1,9 +1,13 @@
+export const revalidate = 604800; // 7 days
+
+import { getProductBySlug } from "@/actions";
+import { StockLabel } from "@/components";
 import QuantitySelector from "@/components/product/quantity-selector/QuantitySelector";
 import SizeSelector from "@/components/product/size-selector/SizeSelector";
 import ProductMobileSlideShow from "@/components/product/slideshow/ProductMobileSlideShow";
 import ProductSlideShow from "@/components/product/slideshow/ProductSlideShow";
 import { titleFont } from "@/config/fonts";
-import { initialData } from "@/seed/seed";
+import { Metadata, ResolvingMetadata } from "next";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -12,12 +16,36 @@ interface Props {
   }
 }
 
-export default async function({ params }: Props) {
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const slug = params.slug
+
+  // fetch data
+  const product = await getProductBySlug(slug)
+
+  // optionally access and extend (rather than replace) parent metadata
+  //const previousImages = (await parent).openGraph?.images || []
+
+  return {
+    title: product?.title ?? 'Product not found',
+    description: product?.description ?? '',
+    openGraph: {
+      title: product?.title,
+      description: product?.description ?? '',
+      images: [`/products/${product?.images[1]}`],
+    },
+  }
+}
+
+export default async function ({ params }: Props) {
 
   const { slug } = await params;
-  const product = initialData.products.find(product => product.slug === slug);
+  const product = await getProductBySlug(slug);
 
-  if(!product) {
+  if (!product) {
     notFound();
   }
 
@@ -28,40 +56,41 @@ export default async function({ params }: Props) {
       <div className="col-span-1 md:col-span-2">
 
         {/*Mobile slideshow*/}
-        <ProductMobileSlideShow 
+        <ProductMobileSlideShow
           title={product.title}
           images={product.images}
           className="block md:hidden"
         />
 
         {/*Desktop slideshow*/}
-        <ProductSlideShow 
+        <ProductSlideShow
           title={product.title}
           images={product.images}
           className="hidden md:block"
         />
       </div>
       <div className="col-span-1 px-5">
+        <StockLabel slug={slug} />
         <h1 className={`${titleFont.className} antialiased font-bold text-xl`}>{product.title}</h1>
         <p className="text-lg mb-5">${product.price}</p>
 
         {/*Selector de tallas*/}
-        <SizeSelector 
-          selectedSize={product.sizes[0]} 
-          availableSizes={product.sizes}   
+        <SizeSelector
+          selectedSize={product.sizes[0]}
+          availableSizes={product.sizes}
         />
         {/*Selector de cantidad*/}
-        <QuantitySelector 
+        <QuantitySelector
           quantity={1}
         />
-        
+
         <button className="btn-primary my-5">
           Agregar al carrito
         </button>
         <h3 className="font-bold text-sm">Descripción</h3>
         <p className="font-light">{product.description}</p>
       </div>
-      
+
     </div>
   );
 }
